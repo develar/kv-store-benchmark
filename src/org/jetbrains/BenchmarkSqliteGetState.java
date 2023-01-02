@@ -31,8 +31,7 @@ public class BenchmarkSqliteGetState extends BaseBenchmarkState {
     createStatement.setQueryTimeout(30);
     createStatement.executeUpdate("drop table if exists data");
     createStatement.executeUpdate("create table data (contentDigest integer, contentLength integer, w integer, h integer, data blob)");
-    createStatement.executeUpdate("create index contentDigest_idx ON data (contentDigest)");
-    createStatement.executeUpdate("create index contentLength_idx ON data (contentLength)");
+    createStatement.executeUpdate("create index key_idx ON data (contentDigest, contentLength)");
 
     PreparedStatement statement = connection.prepareStatement("insert into data values(?, ?, ?, ?, ?)");
     for (int i = 0, l = keys.length; i < l; i++) {
