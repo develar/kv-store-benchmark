@@ -1,6 +1,6 @@
 package org.jetbrains;
 
-import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.io.NioFiles;
 import com.intellij.util.io.DataExternalizer;
 import com.intellij.util.io.KeyDescriptor;
 import com.intellij.util.io.PersistentHashMap;
@@ -43,7 +43,6 @@ public class BenchmarkPhmGetState extends BaseBenchmarkState {
       map.put(newKey, values[i]);
     }
 
-    map.compact();
     map.dropMemoryCaches();
     map.close();
     map = createMap();
@@ -102,7 +101,7 @@ public class BenchmarkPhmGetState extends BaseBenchmarkState {
   @TearDown
   public void tearDown() throws Exception {
     if (dir != null) {
-      FileUtil.delete(dir);
+      NioFiles.deleteRecursively(dir);
       dir = null;
     }
   }

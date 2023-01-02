@@ -1,11 +1,12 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import org.h2.mvstore.DataUtils;
+import org.h2.mvstore.WriteBuffer;
+import org.h2.mvstore.type.BasicDataType;
 import org.jetbrains.mvstore.DataUtil;
-import org.jetbrains.mvstore.type.DataType;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 final class ImageValue {
@@ -42,14 +43,14 @@ final class ImageValue {
   @Override
   public int hashCode() {
     int result = Arrays.hashCode(data);
-    result = 31 * result + (width != +0.0f ? Float.floatToIntBits(width) : 0);
-    result = 31 * result + (height != +0.0f ? Float.floatToIntBits(height) : 0);
+    result = 31 * result + (width != 0.0f ? Float.floatToIntBits(width) : 0);
+    result = 31 * result + (height != 0.0f ? Float.floatToIntBits(height) : 0);
     result = 31 * result + actualWidth;
     result = 31 * result + actualHeight;
     return result;
   }
 
-  static final class ImageValueSerializer implements DataType<ImageValue> {
+  static final class ImageValueSerializer extends BasicDataType<ImageValue> {
     private static final long MAX_IMAGE_SIZE = 16 * 1024 * 1024;
 
     @Override
@@ -65,29 +66,29 @@ final class ImageValue {
     }
 
     @Override
-    public void write(ByteBuf buf, ImageValue obj) {
-      buf.writeFloat(obj.width);
-      buf.writeFloat(obj.height);
-      DataUtil.writeVarInt(buf, obj.actualWidth);
-      DataUtil.writeVarInt(buf, obj.actualHeight);
-
-      DataUtil.writeByteArray(buf, obj.data);
+    public void write(WriteBuffer buff, ImageValue obj) {
+      buff.putFloat(obj.width);
+      buff.putFloat(obj.height);
+      buff.putVarInt(obj.actualWidth);
+      buff.putVarInt(obj.actualHeight);
+      buff.putVarInt(obj.data.length);
+      buff.put(obj.data);
     }
 
     @Override
-    public ImageValue read(ByteBuf buf) {
-      float width = buf.readFloat();
-      float height = buf.readFloat();
-      int actualWidth = DataUtil.readVarInt(buf);
-      int actualHeight = DataUtil.readVarInt(buf);
+    public ImageValue read(ByteBuffer buff) {
+      float width = buff.getFloat();
+      float height = buff.getFloat();
+      int actualWidth = DataUtils.readVarInt(buff);
+      int actualHeight = DataUtils.readVarInt(buff);
 
-      int length = DataUtil.readVarInt(buf);
+      int length = DataUtils.readVarInt(buff);
       if (length > MAX_IMAGE_SIZE) {
         throw new IllegalStateException("Size of data is too big: " + length);
       }
 
-      byte[] obj = ByteBufUtil.getBytes(buf, buf.readerIndex(), length);
-      buf.readerIndex(buf.readerIndex() + length);
+      byte[] obj = new byte[length];
+      buff.get(obj);
       return new ImageValue(obj, width, height, actualWidth, actualHeight);
     }
   }

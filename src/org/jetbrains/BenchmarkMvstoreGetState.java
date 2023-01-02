@@ -1,14 +1,13 @@
 package org.jetbrains;
 
+import org.h2.mvstore.MVMap;
+import org.h2.mvstore.MVStore;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.mvstore.MVMap;
-import org.jetbrains.mvstore.MVStore;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -52,11 +51,14 @@ public class BenchmarkMvstoreGetState extends BaseBenchmarkState {
   }
 
   @NotNull
-  private MVStore openStore() throws IOException {
-    return new MVStore.Builder()
-      .compressionLevel(compression)
-      .autoCommitDisabled()
-      .open(file);
+  private MVStore openStore() {
+    MVStore.Builder builder = new MVStore.Builder()
+      .fileName(file.toString())
+      .autoCommitDisabled();
+    if (compression != 0) {
+      builder.compress();
+    }
+    return builder.open();
   }
 
   @TearDown

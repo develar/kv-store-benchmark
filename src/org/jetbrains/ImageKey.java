@@ -1,10 +1,12 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains;
 
-import io.netty.buffer.ByteBuf;
-import org.jetbrains.annotations.NotNull;
+import org.h2.mvstore.DataUtils;
+import org.h2.mvstore.WriteBuffer;
+import org.h2.mvstore.type.BasicDataType;
 import org.jetbrains.mvstore.DataUtil;
-import org.jetbrains.mvstore.type.KeyableDataType;
+
+import java.nio.ByteBuffer;
 
 final class ImageKey implements Comparable<ImageKey> {
   long contentDigest;
@@ -37,14 +39,18 @@ final class ImageKey implements Comparable<ImageKey> {
   }
 
   @Override
-  public int compareTo(@NotNull ImageKey o) {
+  public int compareTo(ImageKey o) {
+    if (o == null) {
+      return 1;
+    }
+
     if (contentDigest != o.contentDigest) {
       return contentDigest < o.contentDigest ? -1 : 1;
     }
     return Integer.compare(contentLength, o.contentLength);
   }
 
-  static final class ImageKeySerializer implements KeyableDataType<ImageKey> {
+  static final class ImageKeySerializer extends BasicDataType<ImageKey> {
     @Override
     public int compare(ImageKey a, ImageKey b) {
       return a.compareTo(b);
@@ -56,14 +62,21 @@ final class ImageKey implements Comparable<ImageKey> {
     }
 
     @Override
-    public void write(ByteBuf buf, ImageKey obj) {
-      DataUtil.writeVarLong(buf, obj.contentDigest);
-      DataUtil.writeVarInt(buf, obj.contentLength);
+    public void write(WriteBuffer buf, ImageKey obj) {
+      buf.putVarLong(obj.contentDigest);
+      buf.putVarInt(obj.contentLength);
     }
 
     @Override
-    public ImageKey read(ByteBuf buff) {
-      return new ImageKey(DataUtil.readVarLong(buff), DataUtil.readVarInt(buff));
+    public void write(WriteBuffer buf, Object items, int len) {
+      for (int i = 0; i < len; i++) {
+          write(buf, ((ImageKey[])items)[i]);
+      }
+    }
+
+    @Override
+    public ImageKey read(ByteBuffer buf) {
+      return new ImageKey(DataUtils.readVarLong(buf), DataUtils.readVarInt(buf));
     }
 
     @Override

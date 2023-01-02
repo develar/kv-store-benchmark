@@ -1,11 +1,11 @@
 package org.jetbrains;
 
 import com.intellij.util.io.PersistentHashMap;
-import org.jetbrains.mvstore.MVMap;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
+import java.sql.*;
 
 /**
  * “Get” test: Populate a map with a pre-generated set of keys (in the JMH setup), make ~50% successful and ~50% unsuccessful “get” calls.
@@ -13,10 +13,30 @@ import java.io.IOException;
 
  * "Put/update" test: Add a pre-generated set of keys to the map.
  * In the second loop add the equal set of keys (different objects with the same values) to this map again (make the updates).
- *
+ * <p>
  * “Put/remove” test: In a loop: add 2 entries to a map, remove 1 of existing entries (“add” pointer is increased by 2 on each iteration, “remove” pointer is increased by 1).
  */
 public class ObjectToObjectBenchmark  {
+  @Benchmark
+  public Object get_sqlite(BenchmarkSqliteGetState state, Blackhole blackhole) throws IOException, SQLException {
+    int result = 0;
+    ImageKey[] keys = state.keys;
+    Connection connection = state.connection;
+    // assume that we will have some pool of such statements for concurrent use
+    PreparedStatement statement = connection.prepareStatement("select data from data where contentDigest = ? and contentLength = ?");
+    for (ImageKey key : keys) {
+      statement.setLong(1, key.contentDigest);
+      statement.setLong(2, key.contentLength);
+      ResultSet resultSet = statement.executeQuery();
+      if (resultSet.next()) {
+        byte[] blob = resultSet.getBytes(1);
+        result ^= blob.length;
+      }
+    }
+    blackhole.consume(result);
+    return connection;
+  }
+
   @Benchmark
   public Object get_phm(BenchmarkPhmGetState state, Blackhole blackhole) throws IOException {
     int result = 0;
@@ -35,7 +55,7 @@ public class ObjectToObjectBenchmark  {
   public Object get_mvstore(BenchmarkMvstoreGetState state, Blackhole blackhole) {
     int result = 0;
     ImageKey[] keys = state.keys;
-    MVMap<ImageKey, ImageValue> map = state.map;
+    var map = state.map;
     for (ImageKey key : keys) {
       if (map.get(key) == null) {
         result ^= 1;
