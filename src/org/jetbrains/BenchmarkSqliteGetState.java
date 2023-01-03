@@ -1,10 +1,7 @@
 package org.jetbrains;
 
 import com.intellij.openapi.util.io.NioFiles;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,12 +11,17 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 
 @State(Scope.Thread)
-public class BenchmarkSqliteGetState extends BaseBenchmarkState {
+public class BenchmarkSqliteGetState {
   public Connection connection;
   ImageKey[] keys;
   private Path dir;
 
-  @Override
+  @Param("1K")
+  public String mapSize;
+
+  @Param("2")
+  public int oneFailureOutOf;
+
   @Setup
   public void setup() throws Exception {
     dir = Files.createTempDirectory("sqlite");
@@ -56,6 +58,10 @@ public class BenchmarkSqliteGetState extends BaseBenchmarkState {
 
   @TearDown
   public void tearDown() throws Exception {
+    if (connection != null) {
+      connection.close();
+    }
+
     if (dir != null) {
       NioFiles.deleteRecursively(dir);
       dir = null;

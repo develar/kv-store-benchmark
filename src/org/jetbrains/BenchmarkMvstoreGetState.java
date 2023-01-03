@@ -3,22 +3,30 @@ package org.jetbrains;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.jetbrains.annotations.NotNull;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 @SuppressWarnings("DuplicatedCode")
 @State(Scope.Thread)
-public class BenchmarkMvstoreGetState extends BaseBenchmarkState {
+public class BenchmarkMvstoreGetState  {
   public MVMap<ImageKey, ImageValue> map;
   ImageKey[] keys;
   private Path file;
 
-  @Override
+  @Param("48")
+  public int keysPerPage;
+
+  @Param("1K")
+  public String mapSize;
+
+  @Param("2")
+  public int oneFailureOutOf;
+
+  @Param("0")
+  public int compression;
+
   @Setup
   public void setup() throws Exception {
     file = Files.createTempFile("", "db.db");
@@ -50,10 +58,14 @@ public class BenchmarkMvstoreGetState extends BaseBenchmarkState {
     this.map = map;
   }
 
-  @NotNull
-  private MVStore openStore() {
+  private @NotNull MVStore openStore() {
+    if (keysPerPage <= 0) {
+      throw new IllegalArgumentException("keysPerPage=" + keysPerPage + " cannot be <= 0");
+    }
+
     MVStore.Builder builder = new MVStore.Builder()
       .fileName(file.toString())
+      .keysPerPage(keysPerPage)
       .autoCommitDisabled();
     if (compression != 0) {
       builder.compress();

@@ -5,10 +5,7 @@ import com.intellij.util.io.DataExternalizer;
 import com.intellij.util.io.KeyDescriptor;
 import com.intellij.util.io.PersistentHashMap;
 import org.jetbrains.annotations.NotNull;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -18,12 +15,20 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 @State(Scope.Thread)
-public class BenchmarkPhmGetState extends BaseBenchmarkState {
+public class BenchmarkPhmGetState {
+  @Param("1K")
+  public String mapSize;
+
+  @Param("2")
+  public int oneFailureOutOf;
+
+  @Param("0")
+  public int compression;
+
   public PersistentHashMap<ImageKey, ImageValue> map;
   ImageKey[] keys;
   private Path dir;
 
-  @Override
   @Setup
   public void setup() throws Exception {
     System.setProperty("idea.compression.enabled", compression > 0 ? "true" : "false");
