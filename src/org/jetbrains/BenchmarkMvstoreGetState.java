@@ -27,6 +27,9 @@ public class BenchmarkMvstoreGetState  {
   @Param("0")
   public int compression;
 
+  @Param("16")
+  public int cacheSize;
+
   @Setup
   public void setup() throws Exception {
     file = Files.createTempFile("", "db.db");
@@ -36,6 +39,7 @@ public class BenchmarkMvstoreGetState  {
     MVMap.Builder<ImageKey, ImageValue> mapBuilder = new MVMap.Builder<ImageKey, ImageValue>()
       .keyType(new ImageKey.ImageKeySerializer())
       .valueType(new ImageValue.ImageValueSerializer());
+
     MVMap<ImageKey, ImageValue> map = store.openMap("icons", mapBuilder);
 
     for (int i = 0, l = keys.length; i < l; i++) {
@@ -62,10 +66,14 @@ public class BenchmarkMvstoreGetState  {
     if (keysPerPage <= 0) {
       throw new IllegalArgumentException("keysPerPage=" + keysPerPage + " cannot be <= 0");
     }
+    if (cacheSize < 0) {
+      throw new IllegalArgumentException("cacheSize=" + cacheSize + " cannot be < 0");
+    }
 
     MVStore.Builder builder = new MVStore.Builder()
       .fileName(file.toString())
       .keysPerPage(keysPerPage)
+      .cacheSize(cacheSize)
       .autoCommitDisabled();
     if (compression != 0) {
       builder.compress();
