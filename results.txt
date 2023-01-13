@@ -1,0 +1,43 @@
+Benchmark                            (cacheSize)  (compression)  (keysPerPage)  (mapSize)  (oneFailureOutOf)  Mode  Cnt    Score   Error  Units
+ObjectToObjectBenchmark.get_mvstore           64              0             48        100                  2    ss   40    0,022 ± 0,004  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A        100                  2    ss   40    0,469 ± 0,271  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A        100                  2    ss   40    0,222 ± 0,016  ms/op
+
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48         1K                  2    ss   40    0,248 ± 0,028  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A         1K                  2    ss   40    2,874 ± 0,214  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A         1K                  2    ss   40    1,786 ± 0,323  ms/op
+
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48        10K                  2    ss   40    2,585 ± 0,186  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A        10K                  2    ss   40   20,597 ± 0,334  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A        10K                  2    ss   40   32,196 ± 0,748  ms/op
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48       100K                  2    ss   40   44,771 ± 1,311  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A       100K                  2    ss   40  222,039 ± 7,520  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A       100K                  2    ss   40  318,766 ± 2,656  ms/op
+
+---
+Benchmark                           (mapSize)  (oneFailureOutOf)  Mode  Cnt    Score   Error  Units
+ObjectToObjectBenchmark.get_sqlite        100                  2    ss   40    0,222 ± 0,016  ms/op
+ObjectToObjectBenchmark.get_sqlite         1K                  2    ss   40    1,786 ± 0,323  ms/op
+ObjectToObjectBenchmark.get_sqlite        10K                  2    ss   40   32,196 ± 0,748  ms/op
+ObjectToObjectBenchmark.get_sqlite       100K                  2    ss   40  318,766 ± 2,656  ms/op
+
+---
+Benchmark                            (cacheSize)  (compression)  (keysPerPage)  (mapSize)  (oneFailureOutOf)  Mode  Cnt    Score    Error  Units
+ObjectToObjectBenchmark.get_mvstore           64              0             48        100                  2    ss   40    0,022 ±  0,003  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A        100                  2    ss   40    0,562 ±  0,289  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A        100                  2    ss   40    0,421 ±  0,032  ms/op
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48         1K                  2    ss   40    0,236 ±  0,026  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A         1K                  2    ss   40    3,222 ±  0,497  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A         1K                  2    ss   40    5,729 ±  0,461  ms/op
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48        10K                  2    ss   40    2,595 ±  0,148  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A        10K                  2    ss   40   21,164 ±  0,497  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A        10K                  2    ss   40   54,117 ±  0,825  ms/op
+
+ObjectToObjectBenchmark.get_mvstore           64              0             48       100K                  2    ss   40   70,402 ±  9,846  ms/op
+ObjectToObjectBenchmark.get_phm              N/A              0            N/A       100K                  2    ss   40  216,087 ±  1,396  ms/op
+ObjectToObjectBenchmark.get_sqlite           N/A            N/A            N/A       100K                  2    ss   40  588,717 ± 14,079  ms/op

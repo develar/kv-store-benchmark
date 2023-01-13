@@ -4,7 +4,6 @@ package org.jetbrains;
 import org.h2.mvstore.DataUtils;
 import org.h2.mvstore.WriteBuffer;
 import org.h2.mvstore.type.BasicDataType;
-import org.jetbrains.mvstore.DataUtil;
 
 import java.nio.ByteBuffer;
 
@@ -58,7 +57,7 @@ final class ImageKey implements Comparable<ImageKey> {
 
     @Override
     public int getMemory(ImageKey obj) {
-      return DataUtil.VAR_LONG_MAX_SIZE + DataUtil.VAR_INT_MAX_SIZE;
+      return 5 + 9;
     }
 
     @Override

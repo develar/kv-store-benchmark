@@ -4,7 +4,6 @@ package org.jetbrains;
 import org.h2.mvstore.DataUtils;
 import org.h2.mvstore.WriteBuffer;
 import org.h2.mvstore.type.BasicDataType;
-import org.jetbrains.mvstore.DataUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -62,7 +61,7 @@ final class ImageValue {
     public int getMemory(ImageValue obj) {
       return Float.BYTES * 2 +
              4 /* w or h var int size (strictly speaking 5, but 4 is totally ok) */ * 2 +
-             DataUtil.VAR_INT_MAX_SIZE /* max var int size */ + obj.data.length;
+             5 /* max var int size */ + obj.data.length;
     }
 
     @Override

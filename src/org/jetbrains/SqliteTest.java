@@ -1,30 +1,37 @@
 package org.jetbrains;
 
 import com.intellij.openapi.util.io.NioFiles;
+import org.jetbrains.sqlite.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.*;
 
 @SuppressWarnings("DuplicatedCode")
 public final class SqliteTest {
   public static void main(String[] args) throws Exception {
     Path dbDir = Files.createTempDirectory("db");
     try {
-      var connection = DriverManager.getConnection("jdbc:sqlite:" + dbDir.toString() + "/test.db");
-      connection.setAutoCommit(false);
+      String file = dbDir.toString() + "/test.db";
+      var connection = new SqliteConnection(Path.of(file), new SQLiteConfig());
       try {
-        Statement createStatement = connection.createStatement();
-        createStatement.setQueryTimeout(30);
-        createStatement.executeUpdate("drop table if exists data");
-        createStatement.executeUpdate("create table data (contentDigest integer, contentLength integer, w integer, h integer, data blob)");
-        createStatement.executeUpdate("create index key_idx ON data (contentDigest, contentLength)");
+        connection.beginTransaction();
+        connection.execute("drop table if exists data");
+        connection.execute("create table data (contentDigest integer, contentLength integer, w integer, h integer, data blob)");
+        connection.execute("create index key_idx ON data (contentDigest, contentLength)");
 
-        ImageKey[] keys = Util.loadObjectArray("100000");
-        ImageValue[] values = Util.generateValues("100000");
+        String size = "100";
+        ImageKey[] keys = Util.loadObjectArray(size);
+        ImageValue[] values = Util.generateValues(size);
         fillDatabase(connection, keys, values);
-        PreparedStatement statement = connection.prepareStatement("select data from data where contentDigest = ? and contentLength = ?");
-        lookup(keys[keys.length / 2 + 1], statement);
+        connection.commit();
+
+        var binder = new LongBinder(2, 1);
+        try (var statement = connection.prepareStatement("select data from data where contentDigest = ? and contentLength = ?", binder)) {
+          long start = System.currentTimeMillis();
+          lookup(keys[keys.length / 2 + 1], statement, binder);
+          long end = System.currentTimeMillis();
+          System.out.println(end - start);
+        }
       }
       finally {
         connection.close();
@@ -35,10 +42,9 @@ public final class SqliteTest {
     }
   }
 
-  private static void lookup(ImageKey key, PreparedStatement statement) throws SQLException {
-    statement.setLong(1, key.contentDigest);
-    statement.setLong(2, key.contentLength);
-    ResultSet resultSet = statement.executeQuery();
+  private static void lookup(ImageKey key, SqlitePreparedStatement statement, LongBinder binder) {
+    binder.bind(key.contentDigest, key.contentLength);
+    var resultSet = statement.executeQuery();
     if (resultSet.next()) {
       byte[] blob = resultSet.getBytes(1);
       if (blob.length == 0) {
@@ -47,8 +53,9 @@ public final class SqliteTest {
     }
   }
 
-  public static void fillDatabase(Connection connection, ImageKey[] keys, ImageValue[] values) throws SQLException {
-    PreparedStatement statement = connection.prepareStatement("insert into data values(?, ?, ?, ?, ?)");
+  public static void fillDatabase(SqliteConnection connection, ImageKey[] keys, ImageValue[] values) {
+    var binder = new ObjectBinder(5, Math.min(keys.length, 10_000));
+    var statement = connection.prepareStatement("insert into data values(?, ?, ?, ?, ?)", binder);
     int batchCount = 0;
     for (int i = 0, l = keys.length; i < l; i++) {
       ImageKey key = keys[i];
@@ -58,25 +65,17 @@ public final class SqliteTest {
       }
       ImageValue value = values[i];
 
-      statement.setLong(1, newKey.contentDigest);
-      statement.setLong(2, newKey.contentLength);
-      statement.setInt(3, value.actualWidth);
-      statement.setInt(4, value.actualHeight);
-      statement.setBytes(5, value.data);
+      binder.bind(newKey.contentDigest, newKey.contentLength, value.actualWidth, value.actualHeight, value.data);
+      binder.addBatch();
 
       if (batchCount++ > 10_000) {
         statement.executeBatch();
-        connection.commit();
         batchCount = 0;
-      }
-      else {
-        statement.addBatch();
       }
     }
 
     if (batchCount > 0) {
       statement.executeBatch();
-      connection.commit();
     }
 
     statement.close();

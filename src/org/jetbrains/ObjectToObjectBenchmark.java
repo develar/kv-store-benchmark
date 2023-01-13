@@ -1,11 +1,11 @@
 package org.jetbrains;
 
 import com.intellij.util.io.PersistentHashMap;
+import org.jetbrains.sqlite.LongBinder;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
-import java.sql.*;
 
 /**
  * “Get” test: Populate a map with a pre-generated set of keys (in the JMH setup), make ~50% successful and ~50% unsuccessful “get” calls.
@@ -18,21 +18,24 @@ import java.sql.*;
  */
 public class ObjectToObjectBenchmark  {
   @Benchmark
-  public Object get_sqlite(BenchmarkSqliteGetState state, Blackhole blackhole) throws IOException, SQLException {
+  public Object get_sqlite(BenchmarkSqliteGetState state, Blackhole blackhole) {
     int result = 0;
     ImageKey[] keys = state.keys;
-    Connection connection = state.connection;
+    var connection = state.connection;
     // assume that we will have some pool of such statements for concurrent use
-    PreparedStatement statement = connection.prepareStatement("select data from data where contentDigest = ? and contentLength = ?");
-    for (ImageKey key : keys) {
-      statement.setLong(1, key.contentDigest);
-      statement.setLong(2, key.contentLength);
-      ResultSet resultSet = statement.executeQuery();
-      if (resultSet.next()) {
-        byte[] blob = resultSet.getBytes(1);
-        result ^= blob.length;
+    var binder = new LongBinder(2, 1);
+    // executing under one read transaction is noticeably faster
+    connection.beginTransaction();
+    try (var statement = connection.prepareStatement("select data from data where contentDigest = ? and contentLength = ?", binder)) {
+      for (ImageKey key : keys) {
+        binder.bind(key.contentDigest, key.contentLength);
+        var blob = statement.selectByteArray();
+        if (blob != null) {
+          result ^= blob.length;
+        }
       }
     }
+    connection.commit();
     blackhole.consume(result);
     return connection;
   }
